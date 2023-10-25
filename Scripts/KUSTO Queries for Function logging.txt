@@ -1,0 +1,32 @@
+AvdBehind_CL 
+
+
+// sessions per host pool over time
+AvdBehind_CL
+| extend HostPool=tostring(split(Id_s,"/")[8])
+| summarize sum(Session_d) by HostPool, TimeGenerated
+| render timechart
+
+
+// available hosts per pool over time
+AvdBehind_CL
+| extend HostPool=tostring(split(Id_s,"/")[8])
+| where Status_s=~"Available"
+| summarize count() by HostPool, TimeGenerated
+| render timechart 
+
+
+// assigned hosts by state (now)
+AvdBehind_CL
+| extend HostPool=tostring(split(Id_s,"/")[8])
+| summarize arg_max(TimeGenerated,*) by Id_s    // get the newest data set by resource id of the session hosts
+| where AssignedUser_s !=""
+| project HostPool, SessionHost=Name_s, AssignedUser_s
+
+
+// # hosts by state (now)
+AvdBehind_CL
+| extend HostPool=tostring(split(Id_s,"/")[8])
+| summarize arg_max(TimeGenerated,*) by Id_s    // get the newest data set by resource id of the session hosts
+| summarize Count=count() by Status=Status_s,HostPool
+| project HostPool, Status, Count

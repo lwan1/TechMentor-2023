@@ -1,0 +1,44 @@
+WVDConnections 
+
+// single user - note: a disconnect -> connect creats a new correlationId
+WVDConnections 
+| where CorrelationId =="f62b9f82-e563-4c15-a31b-1546c30f0000"
+| order by TimeGenerated desc
+
+WVDCheckpoints // detailed information
+
+// checkpoint for a correlationId (timing, disconnectCode, ....)
+WVDCheckpoints
+| where CorrelationId =="f62b9f82-e563-4c15-a31b-1546c30f0000"
+| order by TimeGenerated desc
+
+WVDErrors // error messages from the AVD backend (some are ot a real error message ClientDisconnect)
+
+// measure errors for an alert (e.g., no session hosts available)
+WVDErrors
+| summarize count() by CodeSymbolic
+
+// very cool: bandwidth and latencies - without user names
+WVDConnectionNetworkData 
+
+// join WVDConnections to get the user name
+WVDConnectionNetworkData
+| join kind=inner  (WVDConnections)  on CorrelationId
+
+// join WVDConnections to get the user name
+WVDConnectionNetworkData
+| join kind=inner  (WVDConnections)  on CorrelationId
+
+// Average by session, user, connection
+WVDConnectionNetworkData
+| join kind=inner  (WVDConnections)  on CorrelationId
+| summarize avg(EstRoundTripTimeInMs) by CorrelationId, UserName, ClientSideIPAddress
+| project-away CorrelationId
+
+// For a single user (avg over 5 minutes)
+WVDConnectionNetworkData
+| join kind=inner  (WVDConnections)  on CorrelationId
+| where UserName =~"wvd009@itprocloud.de"
+| summarize avg(EstRoundTripTimeInMs) by UserName, bin(TimeGenerated,5m)
+| render timechart 
+
